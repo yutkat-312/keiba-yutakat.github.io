@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>馬場状態記録</title>
+
+<style>
+body { font-family: sans-serif; padding:20px; }
+
+/* 入力 */
+select, input, button {
+  width:100%; max-width:400px;
+  padding:10px; margin:6px 0;
+}
+
+/* 九マス */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  max-width:300px;
+  margin-bottom:10px;
+}
+
+.grid button {
+  padding:15px;
+  color:white;
+  border:none;
+}
+
+/* 色 */
+.front { background:#e74c3c; }
+.middle { background:#7f8c8d; }
+.back { background:#3498db; }
+
+.selected { outline:3px solid black; }
+
+/* 表 */
+table { border-collapse:collapse; margin-top:20px; width:100%; }
+td, th { border:1px solid #333; padding:6px; }
+</style>
+
+</head>
+
+<body>
+
+<h1>馬場状態記録</h1>
+
+<div id="formArea" style="display:none;">
+
+<input id="date" type="date">
+
+<select id="place" onchange="updateDistance()">
+<option value="">競馬場</option>
+<option>東京</option><option>中山</option><option>阪神</option>
+<option>京都</option><option>中京</option><option>新潟</option>
+<option>福島</option><option>小倉</option><option>札幌</option><option>函館</option>
+</select>
+
+<select id="surface" onchange="updateDistance()">
+<option value="">芝/ダート</option>
+<option>芝</option><option>ダート</option>
+</select>
+
+<select id="distance"><option>距離</option></select>
+
+<select id="condition">
+<option>馬場状態</option>
+<option>良</option><option>稍重</option><option>重</option><option>不良</option>
+</select>
+
+<!-- 1着 -->
+
+<h3>1着</h3>
+<input id="first" placeholder="馬番">
+<div class="grid" id="grid1"></div>
+<input type="hidden" id="pos1">
+
+<!-- 2着 -->
+
+<h3>2着</h3>
+<input id="second" placeholder="馬番">
+<div class="grid" id="grid2"></div>
+<input type="hidden" id="pos2">
+
+<!-- 3着 -->
+
+<h3>3着</h3>
+<input id="third" placeholder="馬番">
+<div class="grid" id="grid3"></div>
+<input type="hidden" id="pos3">
+
+<select id="pace">
+<option>ペース</option>
+<option>S</option><option>M</option><option>H</option>
+</select>
+
+<input id="comment" placeholder="寸評">
+
+<button onclick="send()">保存</button>
+
+<p id="msg"></p>
+
+</div>
+
+<h2>記録一覧</h2>
+<table id="table">
+<thead>
+<tr>
+<th>日付</th><th>場</th><th>芝ダ</th><th>距離</th>
+<th>馬場</th><th>1着</th><th>2着</th><th>3着</th>
+<th>ペース</th><th>寸評</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+// ===== パスワード =====
+if(prompt("パスワード")==="1234"){
+ document.getElementById("formArea").style.display="block";
+}
+
+// ===== 距離 =====
+const dist={
+東京:{芝:[1400,1600,1800,2000,2400],ダート:[1300,1400,1600,2100]},
+中山:{芝:[1200,1600,1800,2000,2500],ダート:[1200,1800,2400]},
+阪神:{芝:[1200,1400,1600,1800,2000,2400],ダート:[1200,1400,1800,2000]},
+京都:{芝:[1200,1400,1600,1800,2000,2400],ダート:[1200,1400,1800]},
+中京:{芝:[1200,1400,1600,2000],ダート:[1200,1400,1800]},
+新潟:{芝:[1000,1200,1600,2000],ダート:[1200,1800]},
+福島:{芝:[1200,1800,2000],ダート:[1150,1700]},
+小倉:{芝:[1200,1800,2000],ダート:[1000,1700]},
+札幌:{芝:[1200,1500,1800,2000],ダート:[1000,1700]},
+函館:{芝:[1200,1800,2000],ダート:[1000,1700]}
+};
+
+function updateDistance(){
+ let p=place.value,s=surface.value;
+ distance.innerHTML="<option>距離</option>";
+ if(p&&s){
+  dist[p][s].forEach(d=>{
+   let o=document.createElement("option");
+   o.text=d+"m"; distance.add(o);
+  });
+ }
+}
+
+// ===== 九マス生成 =====
+const labels=[
+["前内","前中","前外"],
+["中内","中中","中外"],
+["後内","後中","後外"]
+];
+
+function makeGrid(id,inputId){
+ let g=document.getElementById(id);
+ labels.flat().forEach(l=>{
+  let b=document.createElement("button");
+  b.textContent=l;
+
+  if(l.includes("前")) b.className="front";
+  else if(l.includes("中")) b.className="middle";
+  else b.className="back";
+
+  b.onclick=(e)=>{
+   document.getElementById(inputId).value=l;
+   g.querySelectorAll("button").forEach(x=>x.classList.remove("selected"));
+   e.target.classList.add("selected");
+  };
+  g.appendChild(b);
+ });
+}
+
+makeGrid("grid1","pos1");
+makeGrid("grid2","pos2");
+makeGrid("grid3","pos3");
+
+// ===== GAS URL & CSV =====
+const GAS="ここにGAS";
+const CSV="ここにCSV";
+
+// ===== 保存 =====
+function send(){
+ fetch(GAS,{
+  method:"POST",
+  body:JSON.stringify({
+   date:date.value,place:place.value,surface:surface.value,
+   distance:distance.value,condition:condition.value,
+   first:first.value,pos1:pos1.value,
+   second:second.value,pos2:pos2.value,
+   third:third.value,pos3:pos3.value,
+   pace:pace.value,comment:comment.value
+  })
+ }).then(()=>{
+  msg.innerText="保存OK";
+  load();
+ });
+}
+
+// ===== 表示 =====
+async function load(){
+ let res=await fetch(CSV);
+ let text=await res.text();
+ let rows=text.split("\n").map(r=>r.split(","));
+
+ let tb=document.querySelector("#table tbody");
+ tb.innerHTML="";
+ rows.slice(1).reverse().forEach(r=>{
+  let tr=document.createElement("tr");
+  r.forEach(c=>{
+   let td=document.createElement("td");
+   td.innerText=c;
+   tr.appendChild(td);
+  });
+  tb.appendChild(tr);
+ });
+}
+load();
+</script>
+
+</body>
+</html>
