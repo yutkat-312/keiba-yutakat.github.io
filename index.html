@@ -184,21 +184,27 @@ const CSV="https://docs.google.com/spreadsheets/d/16O6lBu2cSNyeTpV3BSjjJa9WUtUCY
 
 // ===== 保存 =====
 function send(){
- fetch(GAS,{
+fetch(GAS,{
   method:"POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
   body:JSON.stringify({
-   date:date.value,place:place.value,surface:surface.value,
-   distance:distance.value,condition:condition.value,
-   first:first.value,pos1:pos1.value,
-   second:second.value,pos2:pos2.value,
-   third:third.value,pos3:pos3.value,
-   pace:pace.value,comment:comment.value
+    date:date.value,
+    place:place.value,
+    surface:surface.value,
+    distance:distance.value,
+    condition:condition.value,
+    first:first.value,
+    pos1:pos1.value,
+    second:second.value,
+    pos2:pos2.value,
+    third:third.value,
+    pos3:pos3.value,
+    pace:pace.value,
+    comment:comment.value
   })
- }).then(()=>{
-  msg.innerText="保存OK";
-  load();
- });
-}
+})
 
 // ===== 表示 =====
 async function load(){
