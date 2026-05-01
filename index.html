@@ -184,12 +184,10 @@ const CSV="https://docs.google.com/spreadsheets/d/16O6lBu2cSNyeTpV3BSjjJa9WUtUCY
 
 // ===== 保存 =====
 function send(){
- fetch(GAS,{
-  method:"POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body:JSON.stringify({
+ fetch(GAS, {
+  method: "POST",
+  mode: "no-cors",
+  body: JSON.stringify({
     date:date.value,
     place:place.value,
     surface:surface.value,
@@ -205,8 +203,7 @@ function send(){
     comment:comment.value
   })
  })
- .then(res => res.text())
- .then(data => {
+ .then(() => {
    msg.innerText="保存OK";
    load();
  })
